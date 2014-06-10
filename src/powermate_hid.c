@@ -1,5 +1,6 @@
 #include "powermate_hid.h"
 #include <stdlib.h>
+#include "hidapi.h"
 
 PowermateHid *powermate_hid_new(void)
 {
