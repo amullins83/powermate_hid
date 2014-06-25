@@ -67,6 +67,7 @@
       - -c ${1}
       - -Ivendor/ceedling/vendor/unity/src
       - -I/usr/local/include/hidapi
+      - -I/usr/local/include/libusb-1.0
       - -Isrc
 
   :test_linker:
@@ -75,6 +76,7 @@
       - -o ${2}
       - ${1}
       - -lhidapi-libusb
+      - -lusb-1.0
 
 :plugins:
   :load_paths:

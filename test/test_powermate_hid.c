@@ -1,5 +1,6 @@
 #include "../vendor/ceedling/vendor/unity/src/unity.h"
 #include "powermate_hid.h"
+#include "libusb.h"
 
 PowermateHid *test_hid;
 
@@ -7,8 +8,8 @@ PowermateData test_data = {
 	.button_state = POWERMATE_OFF,
 	.knob_displacement = 0,
 	._unused = 0,
-	.led_brightness = 0x80,
-	.led_status = 0x14,
+	.led_brightness = 0x00,
+	.led_status = 0x24,
 	.led_multiplier = 1
 };
 
@@ -42,9 +43,9 @@ void test_get_input(void)
 		&test_data, &test_hid->last_input, 6);
 }
 
-void test_send_output(void)
+void send_control(PowermateControl control)
 {
-	test_error = powermate_hid_set_control(test_hid, powermate_control_fast_pulse);
+	test_error = powermate_hid_set_control(test_hid, control);
 
 	TEST_ASSERT_EQUAL(POWERMATE_HID_SUCCESS, test_error);
 
@@ -53,5 +54,15 @@ void test_send_output(void)
 	TEST_ASSERT_EQUAL(POWERMATE_HID_SUCCESS, test_error);
 
 	TEST_ASSERT_EQUAL_MEMORY(
-		&powermate_control_fast_pulse, &test_hid->control, sizeof(PowermateControl));
+		&control, &test_hid->control, sizeof(PowermateControl));
 }
+
+void test_send_led_off(void)
+{
+	send_control(powermate_control_led_off);
+}
+
+// void test_send_led_on(void)
+// {
+// 	send_control(powermate_control_led_dim);
+// }

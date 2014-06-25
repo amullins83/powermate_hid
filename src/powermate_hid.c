@@ -1,7 +1,9 @@
 #include "powermate_hid.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "hidapi.h"
+#include "libusb.h"
 
 #define POWERMATE_CONTROL_REQUEST_LENGTH 5
 #define POWERMATE_INPUT_LENGTH 8
@@ -67,32 +69,96 @@ PowermateError powermate_hid_get_input(PowermateHid *this)
     }
 }
 
+void on_output_done(struct libusb_transfer *transfer);
+
+libusb_device **dev_list;
+
+int is_knob(libusb_device *dev);
+
 PowermateError powermate_hid_send_output(PowermateHid *this)
 {
-	this->_internals->buffer[0] = 0;
+  libusb_device  *temp_dev, *knob_device = NULL;
+  libusb_device_handle *knob_handle = NULL;
 
-	this->_internals->buffer[1] = this->control.type;
-	this->_internals->buffer[2] = this->control.upper_value;
-	this->_internals->buffer[3] = this->control.index & 0xff;
-	this->_internals->buffer[4] = (this->control.index >> 8) & 0xff;
+  int dev_count = libusb_get_device_list(NULL, &dev_list);
+  int i, error;
 
-	int write_bytes = hid_send_feature_report(
-		this->_internals->handle,
-		this->_internals->buffer,
-		POWERMATE_CONTROL_REQUEST_LENGTH);
+  for(i = 0; i < dev_count; i++)
+  {
+    temp_dev = dev_list[i];
+    if(is_knob(temp_dev))
+    {
+        knob_device = temp_dev;
+        break;
+    }
+  }
 
-	if(write_bytes < 0)
+  if(knob_device == NULL)
+  {
+  	libusb_free_device_list(dev_list, 1);
+  	return POWERMATE_HID_ERROR_NOT_FOUND;
+  }
+
+  error = libusb_open(knob_device, &knob_handle);
+
+  if(error || knob_handle == NULL)
+  {
+  	libusb_free_device_list(dev_list, 1);
+  	return POWERMATE_HID_ERROR_ACCESS;
+  }
+
+  struct libusb_transfer *output_transfer = libusb_alloc_transfer(0);
+
+  libusb_fill_control_setup(
+    this->_internals->buffer,
+    LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_INTERFACE |
+    LIBUSB_ENDPOINT_OUT,
+    1,
+    this->control.upper_value << 8 | this->control.type,
+    this->control.index,
+    0);
+
+  libusb_fill_control_transfer(
+    output_transfer,
+    knob_handle,
+    this->_internals->buffer,
+    on_output_done,
+    NULL,
+    1000);
+
+  error = libusb_submit_transfer(output_transfer);
+
+  if(error)
+  {
+  	libusb_close(knob_handle);
+  	libusb_free_device_list(dev_list, 1);
+  	libusb_free_transfer(output_transfer);
+  	return POWERMATE_HID_ERROR_UNKNOWN;
+  }
+
+  return POWERMATE_HID_SUCCESS;
+}
+
+int is_knob(libusb_device *dev)
+{
+    struct libusb_device_descriptor desc;
+
+    libusb_get_device_descriptor(dev, &desc);
+
+    return desc.idVendor  == POWERMATE_VID &&
+           desc.idProduct == POWERMATE_PID;
+}
+
+void on_output_done(struct libusb_transfer *transfer)
+{
+	if(transfer->status != LIBUSB_SUCCESS)
 	{
-		return POWERMATE_HID_ERROR_ACCESS;
+		printf("Control transfer failed: %d\n", transfer->status);
 	}
-	if(write_bytes < POWERMATE_CONTROL_REQUEST_LENGTH)
-	{
-		return POWERMATE_HID_ERROR_TIMEOUT;
-	}
-	else
-	{
-		return POWERMATE_HID_SUCCESS;
-	}
+
+    libusb_close(transfer->dev_handle);
+    libusb_free_device_list(dev_list, 1);
+	libusb_free_transfer(transfer);
 }
 
 PowermateError powermate_hid_set_control(PowermateHid *this, PowermateControl control)
