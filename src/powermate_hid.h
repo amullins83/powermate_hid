@@ -21,7 +21,7 @@ typedef union
   } bits;
 } LEDStatus;
 
-typedef struct PowermateData
+typedef struct powermate_hid_data
 {
   uint8_t   button_state;
   int8_t    knob_displacement;
@@ -31,7 +31,7 @@ typedef struct PowermateData
   uint8_t   led_multiplier;
 } PowermateData;
 
-typedef enum _powermate_hid_error
+typedef enum powermate_hid_error
 {
   POWERMATE_HID_SUCCESS = 0,
   POWERMATE_HID_ERROR_ACCESS,
@@ -40,16 +40,87 @@ typedef enum _powermate_hid_error
   POWERMATE_HID_ERROR_UNKNOWN
 } PowermateError;
 
-typedef struct _POWERMATE_HID
+typedef enum powermate_hid_control_type
 {
-	// Lookup Capabilities and Reports
+  POWERMATE_CONTROL_STATIC_BRIGHTNESS  = 1,
+  POWERMATE_CONTROL_PULSE_ASLEEP       = 2,
+  POWERMATE_CONTROL_PULSE_AWAKE        = 3,
+  POWERMATE_CONTROL_PULSE_MODE         = 4,
+  POWERMATE_HID_CONTROL_UNKNOWN
+} PowermateControlType;
+
+typedef enum powermate_hid_control_pulse_table
+{
+  POWERMATE_PULSE_TABLE_NORMAL = 0,
+  POWERMATE_PULSE_TABLE_WEIRD  = 1,
+  POWERMATE_PULSE_TABLE_CRAZY  = 2
+} PowermatePulseTable;
+
+typedef enum powermate_hid_control_pulse_speed
+{
+  POWERMATE_PULSE_SPEED_SLOW   = 0,
+  POWERMATE_PULSE_SPEED_NORMAL = 1,
+  POWERMATE_PULSE_SPEED_FAST   = 2
+} PowermatePulseSpeed;
+
+typedef enum powermate_hid_control_switch
+{
+  POWERMATE_OFF = 0,
+  POWERMATE_ON  = 1
+} PowermateSwitch;
+
+typedef struct powermate_hid_pulse_index
+{
+  unsigned led_multiplier : 2;
+  unsigned                : 6;
+  unsigned speed          : 8;
+} PowermatePulseIndex;
+
+typedef struct powermate_hid_control
+{
+  PowermateControlType type;
+  uint8_t  upper_value;
+  uint16_t index;
+} PowermateControl;
+
+// Predefined control outputs
+extern PowermateControl powermate_control_fast_pulse;
+extern PowermateControl powermate_control_slow_pulse;
+
+extern PowermateControl powermate_control_led_bright;
+extern PowermateControl powermate_control_led_dim;
+extern PowermateControl powermate_control_led_off;
+
+extern PowermateControl powermate_control_pulse_awake_on;
+extern PowermateControl powermate_control_pulse_awake_off;
+
+extern PowermateControl powermate_control_pulse_asleep_on;
+extern PowermateControl powermate_control_pulse_asleep_off;
+
+typedef struct powermate_hid_internals PowermateInternals;
+
+typedef struct powermate_hid
+{
+	PowermateData       last_input;
+  PowermateControl    control;
+  PowermateError      last_error;
+  PowermateInternals *_internals;
 } PowermateHid;
 
 PowermateHid *powermate_hid_new(void);
-void powermate_hid_delete(PowermateHid *);
+void powermate_hid_delete(PowermateHid *this);
+
+typedef void (*PowermateCallback)(PowermateHid *this);
 
 // These return 0 if all is well, otherwise a PowermateError code
+// The callback parameter, if not NULL, is called when the transfer
+// completes.
 PowermateError powermate_hid_get_input(PowermateHid *this);
+
+PowermateError powermate_hid_set_control(
+  PowermateHid *this,
+  PowermateControl control);
+
 PowermateError powermate_hid_send_output(PowermateHid *this);
 
 #endif // powermate_hid_H
