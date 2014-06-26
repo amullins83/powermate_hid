@@ -32,6 +32,7 @@
     - test/support
   :include:
     - /usr/local/include/**
+    - src/**
 
 :defines:
   # in order to add common defines:
@@ -61,21 +62,20 @@
 
 :tools:
   :test_compiler:
-    :executable: clang
+    :executable: gcc
     :arguments:
       - -o ${2}
       - -c ${1}
       - -Ivendor/ceedling/vendor/unity/src
-      - -I/usr/local/include/hidapi
       - -I/usr/local/include/libusb-1.0
       - -Isrc
 
   :test_linker:
-    :executable: clang
+    :executable: gcc
     :arguments:
       - -o ${2}
       - ${1}
-      - -lhidapi-libusb
+      - -L/usr/local/lib
       - -lusb-1.0
 
 :plugins:
