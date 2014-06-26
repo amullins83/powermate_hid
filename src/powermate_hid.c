@@ -71,7 +71,8 @@ PowermateError powermate_hid_get_input(PowermateHid *this)
 
 void on_output_done(struct libusb_transfer *transfer);
 
-libusb_device **dev_list;
+libusb_device **dev_list = NULL;
+libusb_context *dev_context = NULL;
 
 int is_knob(libusb_device *dev);
 
@@ -79,8 +80,9 @@ PowermateError powermate_hid_send_output(PowermateHid *this)
 {
   libusb_device  *temp_dev, *knob_device = NULL;
   libusb_device_handle *knob_handle = NULL;
+  libusb_init(&dev_context);
 
-  int dev_count = libusb_get_device_list(NULL, &dev_list);
+  int dev_count = libusb_get_device_list(dev_context, &dev_list);
   int i, error;
 
   for(i = 0; i < dev_count; i++)
@@ -133,8 +135,13 @@ PowermateError powermate_hid_send_output(PowermateHid *this)
   	libusb_close(knob_handle);
   	libusb_free_device_list(dev_list, 1);
   	libusb_free_transfer(output_transfer);
+  	libusb_exit(dev_context);
+  	dev_list = NULL;
+  	dev_context = NULL;
   	return POWERMATE_HID_ERROR_UNKNOWN;
   }
+
+  this->is_busy = 1;
 
   return POWERMATE_HID_SUCCESS;
 }
@@ -156,9 +163,14 @@ void on_output_done(struct libusb_transfer *transfer)
 		printf("Control transfer failed: %d\n", transfer->status);
 	}
 
+	PowermateHid *this = (PowermateHid *)transfer->user_data;
     libusb_close(transfer->dev_handle);
     libusb_free_device_list(dev_list, 1);
 	libusb_free_transfer(transfer);
+	dev_list = NULL;
+	libusb_exit(dev_context);
+	dev_context = NULL;
+	this->is_busy = 0;
 }
 
 PowermateError powermate_hid_set_control(PowermateHid *this, PowermateControl control)

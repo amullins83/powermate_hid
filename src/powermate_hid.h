@@ -104,6 +104,7 @@ typedef struct powermate_hid
 	PowermateData       last_input;
   PowermateControl    control;
   PowermateError      last_error;
+  char                is_busy;
   PowermateInternals *_internals;
 } PowermateHid;
 

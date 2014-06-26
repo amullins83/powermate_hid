@@ -1,6 +1,5 @@
 #include "../vendor/ceedling/vendor/unity/src/unity.h"
 #include "powermate_hid.h"
-#include "libusb.h"
 
 PowermateHid *test_hid;
 
@@ -8,8 +7,8 @@ PowermateData test_data = {
 	.button_state = POWERMATE_OFF,
 	.knob_displacement = 0,
 	._unused = 0,
-	.led_brightness = 0x00,
-	.led_status = 0x24,
+	.led_brightness = 0x80,
+	.led_status = 0x00,
 	.led_multiplier = 1
 };
 
@@ -34,8 +33,13 @@ void test_new(void)
 	TEST_ASSERT_NOT_NULL(test_hid);
 }
 
+void send_control(PowermateControl control);
+
 void test_get_input(void)
 {
+	send_control(powermate_control_slow_pulse);
+	send_control(powermate_control_led_dim);
+
 	test_error = powermate_hid_get_input(test_hid);
 
 	TEST_ASSERT_EQUAL(POWERMATE_HID_SUCCESS, test_error);
@@ -57,12 +61,47 @@ void send_control(PowermateControl control)
 		&control, &test_hid->control, sizeof(PowermateControl));
 }
 
+void test_send_pulse_awake_on(void)
+{
+	send_control(powermate_control_pulse_awake_on);
+}
+
+void test_send_fast_pulse(void)
+{
+	send_control(powermate_control_fast_pulse);
+}
+
+void test_send_slow_pulse(void)
+{
+	send_control(powermate_control_slow_pulse);
+}
+
 void test_send_led_off(void)
 {
 	send_control(powermate_control_led_off);
 }
 
-// void test_send_led_on(void)
-// {
-// 	send_control(powermate_control_led_dim);
-// }
+void test_send_led_on(void)
+{
+ 	send_control(powermate_control_led_dim);
+}
+
+void test_send_led_bright(void)
+{
+	send_control(powermate_control_led_bright);
+}
+
+void test_send_pulse_awake_off(void)
+{
+	send_control(powermate_control_pulse_awake_off);
+}
+
+void test_send_pulse_asleep_on(void)
+{
+	send_control(powermate_control_pulse_asleep_on);
+}
+
+void test_send_pulse_asleep_off(void)
+{
+	send_control(powermate_control_pulse_asleep_off);
+}
