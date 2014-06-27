@@ -38,7 +38,7 @@ void send_control(PowermateControl control);
 
 void test_get_input(void)
 {
-    send_control(powermate_control_slow_pulse);
+    send_control(powermate_control_pulse_slow);
 
     send_control(powermate_control_led_dim);
    
@@ -68,14 +68,14 @@ void test_send_pulse_awake_on(void)
     send_control(powermate_control_pulse_awake_on);
 }
 
-void test_send_fast_pulse(void)
+void test_send_pulse_fast(void)
 {
-    send_control(powermate_control_fast_pulse);
+    send_control(powermate_control_pulse_fast);
 }
 
-void test_send_slow_pulse(void)
+void test_send_pulse_slow(void)
 {
-    send_control(powermate_control_slow_pulse);
+    send_control(powermate_control_pulse_slow);
 }
 
 void test_send_led_off(void)

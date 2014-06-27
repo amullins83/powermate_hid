@@ -84,8 +84,8 @@ typedef struct powermate_hid_control
 } PowermateControl;
 
 // Predefined control outputs
-extern PowermateControl powermate_control_fast_pulse;
-extern PowermateControl powermate_control_slow_pulse;
+extern PowermateControl powermate_control_pulse_fast;
+extern PowermateControl powermate_control_pulse_slow;
 
 extern PowermateControl powermate_control_led_bright;
 extern PowermateControl powermate_control_led_dim;
@@ -123,5 +123,10 @@ PowermateError powermate_hid_set_control(
   PowermateControl control);
 
 PowermateError powermate_hid_send_output(PowermateHid *this);
+
+// get_input and send_output are asynchronous.
+// Users may call this function to wait for all asynch operations
+// to be completed.
+PowermateError powermate_hid_wait(PowermateHid *this);
 
 #endif // powermate_hid_H

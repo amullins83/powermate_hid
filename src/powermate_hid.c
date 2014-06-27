@@ -202,6 +202,28 @@ PowermateError powermate_hid_set_control(PowermateHid *this, PowermateControl co
     return this->last_error;
 }
 
+void reset_tv(struct timeval *tv);
+
+PowermateError powermate_hid_wait(PowermateHid *this)
+{
+    PowermateInternals *pmints = this->_internals;
+
+    reset_tv(pmints->tv);
+
+    libusb_handle_events_timeout_completed(
+        pmints->context,
+        pmints->tv,
+        &pmints->control_lock);
+
+    reset_tv(pmints->tv);
+
+    libusb_handle_events_timeout_completed(
+        pmints->context,
+        pmints->tv,
+        &pmints->input_lock);
+}
+
+
 void null_internals(PowermateInternals *this);
 
 struct timeval tv_reset = {2, 0};
@@ -332,13 +354,13 @@ void internals_delete(PowermateInternals *this)
 }
 
 
-PowermateControl powermate_control_fast_pulse = {
+PowermateControl powermate_control_pulse_fast = {
     .type = POWERMATE_CONTROL_PULSE_MODE,
     .upper_value = POWERMATE_PULSE_TABLE_NORMAL,
     .index = 0x30 << 8 | POWERMATE_PULSE_SPEED_FAST
 };
 
-PowermateControl powermate_control_slow_pulse = {
+PowermateControl powermate_control_pulse_slow = {
     .type = POWERMATE_CONTROL_PULSE_MODE,
     .upper_value = POWERMATE_PULSE_TABLE_NORMAL,
     .index = 0x80 << 8 | POWERMATE_PULSE_SPEED_SLOW
