@@ -17,3 +17,13 @@ This project depends on [libusb](http://libusb.info), and the given configuratio
 With libusb installed and the configuration set up to find it, run `rake test:all` in the project folder. 
 
 If you have any problems, let me know.
+
+##Client
+
+You can try out the functions in this library by building the client code in `src/main.c`. On my system, I built with:
+
+```bash
+$rake test:all #builds library in build/test/out
+$clang -c src/main.c -o build/main.o
+$clang -o powermate_client build/main.o build/test/out/powermate_hid.o -lusb-1.0
+```
