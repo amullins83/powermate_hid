@@ -4,6 +4,7 @@
 #include <string.h>
 #include "libusb.h"
 #include <time.h>
+#include "hidapi.h"
 
 struct powermate_hid_internals {
     libusb_context         *context;
@@ -16,6 +17,7 @@ struct powermate_hid_internals {
     int                    input_lock;
     int                    control_lock; 
     unsigned char *buffer;
+    hid_device             *hid_device;
 };
 
 PowermateInternals *internals_new(void);
@@ -50,73 +52,44 @@ void powermate_hid_delete(PowermateHid *this)
     free(this);
 }
 
-void on_input_done(struct libusb_transfer *transfer);
+void on_input_done(PowermateHid *this);
 
 // These return 0 if all is well, otherwise a powermate_hid_error code
 PowermateError powermate_hid_get_input(PowermateHid *this)
 {
-    int error = POWERMATE_HID_SUCCESS;
+    char bytes_read = 0;
 
     PowermateInternals *pmints = this->_internals;
+    pmints->buffer[0] = POWERMATE_IN_ENDPOINT;
 
-    libusb_handle_events_timeout_completed(pmints->context,
-        pmints->tv,
-        &pmints->input_lock);
-
-    pmints->input_lock = 0;
+    bytes_read = hid_get_feature_report(pmints->hid_device, pmints->buffer, POWERMATE_IN_SIZE);
     
-    libusb_fill_interrupt_transfer(
-      pmints->input_transfer,
-      pmints->handle,
-      POWERMATE_IN_ENDPOINT,
-      (unsigned char*)pmints->buffer,
-      POWERMATE_IN_SIZE,
-      on_input_done,
-      this,
-      1000);
-
-    error = libusb_submit_transfer(pmints->input_transfer);
-    
-    if(error != LIBUSB_SUCCESS)
+    if(bytes_read != POWERMATE_IN_SIZE)
     {
-      this->last_error = POWERMATE_HID_ERROR_UNKNOWN;
-      pmints->input_lock = 1;
+        this->last_error = POWERMATE_HID_ERROR_UNKNOWN;
     }
     else
     {
-      this->is_busy++;
-      this->last_error = POWERMATE_HID_SUCCESS;
+        on_input_done(this);
     }
-    
+
     return this->last_error;
 }
 
-void on_input_done(struct libusb_transfer *transfer)
+void on_input_done(PowermateHid *this)
 {
-    int error = transfer->status;
-    PowermateHid *this = (PowermateHid *)transfer->user_data;
     PowermateInternals *pmints = this->_internals;
 
-    if(error == LIBUSB_SUCCESS)
-    {
-        this->last_input = (PowermateData){
-            .button_state = pmints->buffer[0],
-            .knob_displacement = pmints->buffer[1],
-            ._unused = 0,
-            .led_brightness = pmints->buffer[3],
-            .led_status = pmints->buffer[4],
-            .led_multiplier = pmints->buffer[5]
-        };
+    this->last_input = (PowermateData){
+        .button_state = pmints->buffer[1],
+        .knob_displacement = pmints->buffer[2],
+        ._unused = 0,
+        .led_brightness = pmints->buffer[4],
+        .led_status = pmints->buffer[5],
+        .led_multiplier = pmints->buffer[6]
+    };
 
-        this->last_error = POWERMATE_HID_SUCCESS;
-    }
-    else
-    {
-        this->last_error = POWERMATE_HID_ERROR_TIMEOUT;
-    }
-
-    pmints->input_lock = 1;
-    this->is_busy--;
+    this->last_error = POWERMATE_HID_SUCCESS;
 }
 
 void on_output_done(struct libusb_transfer *transfer);
@@ -231,7 +204,10 @@ struct timeval tv_reset = {2, 0};
 
 void reset_tv(struct timeval *tv)
 {
-    memcpy(tv, &tv_reset, sizeof tv_reset);
+    if(tv != NULL)
+    {
+        memcpy(tv, &tv_reset, sizeof tv_reset);
+    }
 }
 
 PowermateInternals *internals_new(void)
@@ -258,6 +234,13 @@ PowermateInternals *internals_new(void)
     }
 
     device_count = libusb_get_device_list(this->context, &this->dev_list);
+    if(this->dev_list == NULL)
+    {
+        printf("\tNo devices found\n");
+        internals_delete(this);
+        return;
+    }
+
 
     this->device = NULL;
     
@@ -286,15 +269,7 @@ PowermateInternals *internals_new(void)
         return NULL;
     }
 
-    error += libusb_claim_interface(this->handle, 0);
-
-    if(error)
-    {
-        printf("\tFailed to claim interface\n");
-        return NULL;
-    }
-
-    this->buffer = malloc(POWERMATE_IN_SIZE);
+    this->buffer = malloc(POWERMATE_IN_SIZE + 1);
 
     if(this->buffer == NULL)
     {
@@ -317,6 +292,8 @@ PowermateInternals *internals_new(void)
 
     reset_tv(this->tv);
 
+    this->hid_device = hid_open(POWERMATE_VID, POWERMATE_PID, NULL);
+
     return this;
 }
 
@@ -331,23 +308,29 @@ void null_internals(PowermateInternals *this)
     this->tv = NULL;
     this->control_lock = 1;
     this->input_lock = 1;
+    this->hid_device = NULL;
 }
 
 void internals_delete(PowermateInternals *this)
 {
     reset_tv(this->tv);
-    libusb_handle_events_timeout_completed(this->context,
-        this->tv, &this->input_lock);
-    libusb_handle_events_timeout_completed(this->context,
-        this->tv, &this->control_lock);
+
+    if(this->context != NULL && this->tv != NULL)
+    {
+        libusb_handle_events_timeout_completed(this->context,
+            this->tv, &this->control_lock);
+    }
 
     free(this->buffer);
+
     libusb_close(this->handle);
+    
     libusb_free_device_list(this->dev_list, 1);
     libusb_free_transfer(this->control_transfer);
     libusb_free_transfer(this->input_transfer);
     libusb_exit(this->context);
     free(this->tv);
+    hid_close(this->hid_device);
     null_internals(this);
 
     free(this);

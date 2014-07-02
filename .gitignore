@@ -4,6 +4,9 @@
 *.obj
 *.elf
 
+#My test client
+powermate_client 
+
 # Libraries
 *.lib
 *.a

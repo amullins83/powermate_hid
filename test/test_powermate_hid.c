@@ -1,6 +1,7 @@
 #include "../vendor/ceedling/vendor/unity/src/unity.h"
 #include "powermate_hid.h"
 #include "libusb.h"
+#include "hidapi.h"
 #include <unistd.h>
 #include <time.h>
 #include <stdlib.h>
@@ -13,7 +14,7 @@ PowermateData test_data = {
     .knob_displacement = 0,
     ._unused = 0,
     .led_brightness = 0x00,
-    .led_status = 0x00,
+    .led_status = 0x80,
     .led_multiplier = 1
 };
 
