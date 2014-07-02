@@ -5,6 +5,7 @@
 *.elf
 
 #My test client
+bin
 powermate_client 
 
 # Libraries
