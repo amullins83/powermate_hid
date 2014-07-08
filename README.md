@@ -6,6 +6,10 @@ Made with [Ceedling](http://throwtheswitch.org)!
 
 The [Griffin Powermate](http://store.griffintechnology.com/powermate) is a handy knob/button controller useful for many applications. Griffin provides driver software for all major operating systems, but the hardware is simple enough to write your own drivers for. This project is intended to provide at least one example of a custom driver with a terminal client.
 
+##Permissions
+
+You may need to set your user permissions to allow reading and writing to the Powermate. If your system uses [udev]() to allow user-space device control, you can copy the included file `55-powermate.rules` to `/etc/udev/rules.d/`. This gives all members of the group `input` read and write access to the device.
+
 ##Building
 
 ###Currently this project only works in Linux
