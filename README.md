@@ -14,7 +14,9 @@ Instead of `make`, this project uses `rake` and a configuration file `project.ym
 
 This project depends on [libusb](http://libusb.info), and the given configuration expects `libusb.h` to be found at `/usr/local/include/libusb-1.0`, with the appropriate pre-built library object at `/usr/local/lib`. You can specify different locations in the YAML.
 
-With libusb installed and the configuration set up to find it, run `rake test:all` in the project folder. 
+This project also depends on [hidapi](http://www.signal11.us/oss/hidapi/), and the given configuration expects `hidapi.h` to be found at `/usr/local/include/hidapi`, with a libusb-enabled pre-built library object at `usr/local/lib`. Again, these locations can be set in the YAML.
+
+With libusb and hidapi installed and the configuration set up to find them, run `rake test:all` in the project folder. 
 
 If you have any problems, let me know.
 
@@ -25,7 +27,7 @@ You can try out the functions in this library by building the client code in `sr
 ```bash
 $rake test:all #builds library in build/test/out
 $gcc -c src/main.c -o build/main.o
-$gcc -o bin/powermate_client build/main.o build/test/out/powermate_hid.o -lusb-1.0
+$gcc -o bin/powermate_client build/main.o build/test/out/powermate_hid.o -lusb-1.0 -lhidapi-libusb
 ```
 If you feel like your system is probably similar to mine, you can take a chance on the included `build_powermate_client.sh` script, which will run the above commands for you.
 
