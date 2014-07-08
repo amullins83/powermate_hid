@@ -24,6 +24,29 @@ You can try out the functions in this library by building the client code in `sr
 
 ```bash
 $rake test:all #builds library in build/test/out
-$clang -c src/main.c -o build/main.o
-$clang -o powermate_client build/main.o build/test/out/powermate_hid.o -lusb-1.0
+$gcc -c src/main.c -o build/main.o
+$gcc -o bin/powermate_client build/main.o build/test/out/powermate_hid.o -lusb-1.0
 ```
+If you feel like your system is probably similar to mine, you can take a chance on the included `build_powermate_client.sh` script, which will run the above commands for you.
+
+Once built, you can run `$bin/powermate_client` to experiment with an interactive command line. A more practical use of his client is to send a small set of commands as a single command line argument, which will run each command in order.
+
+###The commands:
+
+    h:                   Show this help
+    l:                      Turn LED on
+    m:   Set LED to half power (medium)
+    L:                     Turn LED off
+    i:              Get an input report
+    p:                Enable pulse mode
+    P:               Disable pulse mode
+    f:                       Fast pulse
+    s:                       Slow pulse
+    q:                             Quit
+
+###Examples
+
+    $bin/powermate_client pf    # Pulse fast
+    $bin/powermate_client ps    # Pulse slow
+    $bin/powermate_client PL    # Turn off
+    $bin/powermate_client i     # Print one input report

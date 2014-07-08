@@ -346,7 +346,7 @@ PowermateControl powermate_control_pulse_fast = {
 PowermateControl powermate_control_pulse_slow = {
     .type = POWERMATE_CONTROL_PULSE_MODE,
     .upper_value = POWERMATE_PULSE_TABLE_NORMAL,
-    .index = 0x80 << 8 | POWERMATE_PULSE_SPEED_SLOW
+    .index = 0x80 << 8 | POWERMATE_PULSE_SPEED_NORMAL
 };
 
 PowermateControl powermate_control_led_bright = {

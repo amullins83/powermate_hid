@@ -3,23 +3,58 @@
 #include <string.h>
 #include "powermate_hid.h"
 
-void run_command(const char *command, PowermateHid *this);
+#define INTERACTIVE 0
+#define RUN_ONCE    1
+
+void run_command(char command, PowermateHid *this);
 
 int main(int argc, char* argv[])
 {
-    char command[128];
-    PowermateHid *powermate = powermate_hid_new();
-    printf("Powermate device opened\n");
+    char command_sequence[128];
+    char mode, i = 0;
     
-    while(strcmp(command, "q"))
+    if(argc > 1)
     {
-        printf("%s\n", "Please enter a command (h for help):");
-        scanf("%127s", command);
+        mode = RUN_ONCE;
+        strncpy((char *)command_sequence, argv[1], 127);
+        command_sequence[126] = 0;
+        strcat(command_sequence, "q");
+    }
+    else
+    {
+        mode = INTERACTIVE;
+        command_sequence[0] = 0;
+    }
+
+    char command = command_sequence[0];
+
+    PowermateHid *powermate = powermate_hid_new();
+
+    if(mode == INTERACTIVE)
+    {
+        printf("Powermate device opened\n");
+    }
+
+    while(command != 'q')
+    {
+        if(command == 0 && mode == INTERACTIVE)
+        {
+            printf("%s\n", "Please enter a command (h for help):");
+            scanf("%127s", command_sequence);
+            i = 0;
+        }
+
+        command = command_sequence[i++];
+        
         run_command(command, powermate);
     }
 
     powermate_hid_delete(powermate);
-    printf("Powermate device closed\n");
+
+    if(mode == INTERACTIVE)
+    {
+        printf("Powermate device closed\n");
+    }
     
     return 0;
 }
@@ -28,7 +63,7 @@ typedef void (*Action)(PowermateHid *this);
 
 typedef struct command_map
 {
-  const char *key;
+  char key;
   Action      action;
   const char *description;
 } CommandMap;
@@ -41,29 +76,31 @@ void pulse_on(PowermateHid *this);
 void pulse_off(PowermateHid *this);
 void pulse_fast(PowermateHid *this);
 void pulse_slow(PowermateHid *this);
+void led_medium(PowermateHid *this);
 void do_nothing(PowermateHid *this) { }
 
-static CommandMap null_command = { NULL, NULL, NULL };
+static CommandMap null_command = { 0, NULL, NULL };
 
 static CommandMap commands[] = {
-    { "h", show_help, "Show this help" },
-    { "l", led_on, "Turn LED on"},
-    { "L", led_off, "Turn LED off"},
-    { "i", get_input, "Get an input report"},
-    { "p", pulse_on, "Enable pulse mode"},
-    { "P", pulse_off, "Disable pulse mode"},
-    { "f", pulse_fast, "Fast pulse"},
-    { "s", pulse_slow, "Slow pulse"},
-    { "q", do_nothing, "Quit"},
-    { NULL, NULL, NULL }
+    { 'h', show_help, "Show this help" },
+    { 'l', led_on, "Turn LED on"},
+    { 'm', led_medium, "Set LED to half power (medium)"},
+    { 'L', led_off, "Turn LED off"},
+    { 'i', get_input, "Get an input report"},
+    { 'p', pulse_on, "Enable pulse mode"},
+    { 'P', pulse_off, "Disable pulse mode"},
+    { 'f', pulse_fast, "Fast pulse"},
+    { 's', pulse_slow, "Slow pulse"},
+    { 'q', do_nothing, "Quit"},
+    { 0, NULL, NULL }
 };
 
-void run_command(const char *command, PowermateHid *this)
+void run_command(char command, PowermateHid *this)
 {
     int i;
-    for(i = 0; commands[i].key != NULL; i++)
+    for(i = 0; commands[i].key != 0; i++)
     {
-        if(!strncmp(command, commands[i].key, 1))
+        if(command == commands[i].key)
         {
             commands[i].action(this);
             break;
@@ -75,9 +112,9 @@ void show_help(PowermateHid *this)
 {
     int i;
     printf("%s\n", "Commands:");
-    for(i = 0; commands[i].key != NULL; i++)
+    for(i = 0; commands[i].key != 0; i++)
     {
-        printf("\t%1s: %30s\n", commands[i].key, commands[i].description);
+        printf("\t%c: %30s\n", commands[i].key, commands[i].description);
     }
     printf("\n");
 }
@@ -145,5 +182,13 @@ void pulse_fast(PowermateHid *this)
 void pulse_slow(PowermateHid *this)
 {
     powermate_hid_set_control(this, powermate_control_pulse_slow);
+    powermate_hid_send_output(this);
+}
+
+void led_medium(PowermateHid *this)
+{
+    PowermateControl medium = powermate_control_led_off;
+    medium.index = 0x50;
+    powermate_hid_set_control(this, medium);
     powermate_hid_send_output(this);
 }
