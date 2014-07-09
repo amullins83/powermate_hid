@@ -13,7 +13,7 @@ PowermateData test_data = {
     .button_state = POWERMATE_OFF,
     .knob_displacement = 0,
     ._unused = 0,
-    .led_brightness = 0x00,
+    .led_brightness = 0x10,
     .led_status = 0x80,
     .led_multiplier = 1
 };
@@ -33,21 +33,6 @@ void tearDown(void)
         powermate_hid_delete(test_hid);
         test_hid = NULL;
     }
-}
-
-void send_control(PowermateControl control);
-
-void test_get_input(void)
-{
-    send_control(powermate_control_pulse_slow);
-
-    send_control(powermate_control_led_dim);
-   
-    test_error = powermate_hid_get_input(test_hid);
-
-    TEST_ASSERT_EQUAL(POWERMATE_HID_SUCCESS, test_error);
-    TEST_ASSERT_EQUAL_MEMORY(
-        &test_data, &test_hid->last_input, 6);
 }
 
 void send_control(PowermateControl control)
@@ -79,6 +64,11 @@ void test_send_pulse_slow(void)
     send_control(powermate_control_pulse_slow);
 }
 
+void test_send_pulse_awake_off(void)
+{
+    send_control(powermate_control_pulse_awake_off);
+}
+
 void test_send_led_off(void)
 {
     send_control(powermate_control_led_off);
@@ -94,11 +84,6 @@ void test_send_led_bright(void)
     send_control(powermate_control_led_bright);
 }
 
-void test_send_pulse_awake_off(void)
-{
-    send_control(powermate_control_pulse_awake_off);
-}
-
 void test_send_pulse_asleep_on(void)
 {
     send_control(powermate_control_pulse_asleep_on);
@@ -107,4 +92,17 @@ void test_send_pulse_asleep_on(void)
 void test_send_pulse_asleep_off(void)
 {
     send_control(powermate_control_pulse_asleep_off);
+}
+
+void test_get_input(void)
+{
+    send_control(powermate_control_pulse_slow);
+
+    send_control(powermate_control_led_dim);
+   
+    test_error = powermate_hid_get_input(test_hid);
+
+    TEST_ASSERT_EQUAL(POWERMATE_HID_SUCCESS, test_error);
+    TEST_ASSERT_EQUAL_MEMORY(
+        &test_data, &test_hid->last_input, 6);
 }
