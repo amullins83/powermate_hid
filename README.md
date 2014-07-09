@@ -14,7 +14,7 @@ You may need to set your user permissions to allow reading and writing to the Po
 
 ###Currently this project only works in Linux
 
-Instead of `make`, this project uses `rake` and a configuration file `project.yml`. This file defines the compiler and linker flags necessary to build and test the library.
+This project uses `rake` and a configuration file `project.yml` to run tests. This file defines the compiler and linker flags necessary to build and test the library.
 
 This project depends on [libusb](http://libusb.info), and the given configuration expects `libusb.h` to be found at `/usr/local/include/libusb-1.0`, with the appropriate pre-built library object at `/usr/local/lib`. You can specify different locations in the YAML.
 
@@ -22,20 +22,20 @@ This project also depends on [hidapi](http://www.signal11.us/oss/hidapi/), and t
 
 With libusb and hidapi installed and the configuration set up to find them, run `rake test:all` in the project folder. 
 
+The tests will only pass if 
+
+ 1. A Griffin Powermate is connected to your system **AND**
+ 2. Your user has read and write permissions for it
+
 If you have any problems, let me know.
 
 ##Client
 
-You can try out the functions in this library by building the client code in `src/main.c`. On my system, I built with:
+You can try out the functions in this library by building and running the included sample client. Just build the library the normal way:
 
-```bash
-$rake test:all #builds library in build/test/out
-$gcc -c src/main.c -o build/main.o
-$gcc -o bin/powermate_client build/main.o build/test/out/powermate_hid.o -lusb-1.0 -lhidapi-libusb
-```
-If you feel like your system is probably similar to mine, you can take a chance on the included `build_powermate_client.sh` script, which will run the above commands for you.
+    $./configure && make
 
-Once built, you can run `$bin/powermate_client` to experiment with an interactive command line. A more practical use of his client is to send a small set of commands as a single command line argument, which will run each command in order.
+If all goes well, you should have an executable `./powermate_client` in the project directory. Running it with no arguments starts an interactive session. Running with a set of command characters will run the respective commands and then stop. There is no delay between commands, so this won't allow custom LED effects with a single execution.
 
 ###The commands:
 
@@ -52,7 +52,7 @@ Once built, you can run `$bin/powermate_client` to experiment with an interactiv
 
 ###Examples
 
-    $bin/powermate_client pf    # Pulse fast
-    $bin/powermate_client ps    # Pulse slow
-    $bin/powermate_client PL    # Turn off
-    $bin/powermate_client i     # Print one input report
+    $./powermate_client pf    # Pulse fast
+    $./powermate_client ps    # Pulse slow
+    $./powermate_client PL    # Turn off
+    $./powermate_client i     # Print one input report

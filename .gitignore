@@ -6,7 +6,10 @@
 
 #My test client
 bin
-powermate_client 
+powermate_client
+
+#autom4te
+autom4te.cache 
 
 # Libraries
 *.lib
@@ -28,3 +31,6 @@ powermate_client
 
 #Ceedling
 build
+
+#Handy files not part of this project
+resources

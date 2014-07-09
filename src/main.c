@@ -11,7 +11,7 @@ void run_command(char command, PowermateHid *this);
 int main(int argc, char* argv[])
 {
     char command_sequence[128];
-    char mode, i = 0;
+    char mode, in_chars, i = 0;
     
     if(argc > 1)
     {
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
         if(command == 0 && mode == INTERACTIVE)
         {
             printf("%s\n", "Please enter a command (h for help):");
-            scanf("%127s", command_sequence);
+            in_chars = scanf("%127s", command_sequence);
             i = 0;
         }
 
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     {
         printf("Powermate device closed\n");
     }
-    
+
     return 0;
 }
 
